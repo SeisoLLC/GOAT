@@ -76,14 +76,6 @@ def run_security_tests(*, image: str):
                 str(temp_dir),
             )
 
-    tag = image.split(":")[-1]
-    file_name = tag + ".tar"
-    image_file = temp_dir.joinpath(file_name)
-    raw_image = CLIENT.images.get(image).save(named=True)
-    with open(image_file, "wb") as file:
-        for chunk in raw_image:
-            file.write(chunk)
-
     working_dir = "/tmp/"
     volumes = {temp_dir: {"bind": working_dir, "mode": "ro"}}
 
@@ -95,8 +87,7 @@ def run_security_tests(*, image: str):
         "--quiet image --timeout 10m0s --exit-code 0 --severity "
         + ",".join(LOW_PRIORITY_VULNS)
         + " --format json --light --input "
-        + working_dir
-        + file_name
+        + image
     )
     opinionated_docker_run(
         image=scanner,
@@ -111,8 +102,7 @@ def run_security_tests(*, image: str):
         "--quiet image --timeout 10m0s --exit-code 1 --severity "
         + ",".join(UNACCEPTABLE_VULNS)
         + " --format json --light --input "
-        + working_dir
-        + file_name
+        + image
     )
     opinionated_docker_run(
         image=scanner,
